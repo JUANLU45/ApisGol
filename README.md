@@ -1,3 +1,4 @@
+<img width="1280" height="640" alt="ApisGol" src="https://github.com/user-attachments/assets/ec8ceadc-c1ba-485c-ab50-a3c30c94106a" />
 # ApisGol
 ## Un par de defensas para los regates de la IA ⚽
 
