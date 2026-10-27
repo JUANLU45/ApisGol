@@ -35,3 +35,25 @@ Si ocurre una mejora o tienes alguna regla interesante que agregar, puedes abrir
 MIT. Gratis para usar, modificar y compartir. Sin garantías ni compromiso de soporte. Cada uno entrena a sus propias defensas.
 
 **Y recuerda: que el marcador esté en verde no significa que el partido esté ganado.**
+
+### Las cuatro defensas
+
+Estos son los primeros cuatro verificadores que comparto. Cada uno se centra en un aspecto diferente de la calidad del código.
+
+| Verificador | Qué comprueba |
+|---|---|
+| [**verify-error-handling.mts**](verificadores/verify-error-handling.mts) | Detecta errores silenciados, promesas que ocultan fallos, respuestas HTTP ignoradas y otras situaciones en las que un error puede desaparecer sin avisar. |
+| [**verify-trampas.mts**](verificadores/verify-trampas.mts) | Vigila que nadie engañe a los demás verificadores: comprobaciones apagadas con `@ts-ignore` o `eslint-disable`, tipos forzados, la consola disfrazada, avisos que no avisan, código que nadie revisa y ajustes que esconden errores. |
+| [**verify-runtime-safety.ts**](verificadores/verify-runtime-safety.ts) | Revisa operaciones que pueden provocar fallos durante la ejecución: JSON sin proteger, variables de entorno que se dan por hechas, respuestas HTTP sin comprobar y listas que pueden venir vacías. |
+| [**find-hardcoded-colors.ts**](verificadores/find-hardcoded-colors.ts) | Localiza colores escritos directamente en el código fuera de los archivos del tema, para mantener la coherencia del sistema de estilos. |
+
+Cada archivo contiene sus propias comprobaciones. Puedes consultar el código para conocer las reglas que aplica y su funcionamiento.
+
+**Antes de pitar el inicio:** `verify-error-handling` y `verify-trampas` se lanzan con Node 22.18 o superior y usan el paquete `typescript` del proyecto; `verify-trampas` tiene que jugar dentro de un repositorio git. `verify-runtime-safety` y `find-hardcoded-colors` se lanzan con `ts-node`. Todos desde la raíz del proyecto:
+
+```bash
+node verificadores/verify-error-handling.mts
+npx ts-node verificadores/verify-runtime-safety.ts
+```
+
+Si no encuentran nada que revisar, no dan el partido por ganado: terminan en rojo.
