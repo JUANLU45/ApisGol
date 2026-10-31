@@ -35,7 +35,7 @@ Iré dejando algunas de las defensas que utilizo en mis partidos. Cada uno tiene
 | **1** | Descarga la defensa que te interesa. |
 | **2** | Mira si te gusta en la línea que juega. |
 | **3** | Explícale tus reglas. |
-| **4** | Pita el inicio y descubre si tienes algún agujero en la defensa. |
+| **4** | Pita el inicio y descubre si tienes algún agujero en el equipo. |
 
 > Y si te empieza a sacar faltas, tampoco te enfades con el árbitro. **Para eso está.**
 
@@ -81,4 +81,4 @@ node verificadores/verify-error-handling.mts
 npx ts-node verificadores/verify-runtime-safety.ts
 ```
 
-**Si no encuentran nada que revisar, no dan el partido por ganado: terminan en rojo.**
+**EMPIEZA EL JUEGO.**
