@@ -56,9 +56,9 @@ Si ocurre una mejora o tienes alguna regla interesante que agregar, puedes abrir
 
 ---
 
-### Las cuatro defensas
+### Las cinco defensas
 
-Estos son los primeros cuatro verificadores que comparto. Cada uno se centra en un aspecto diferente de la calidad del código.
+Estos son los primeros cinco verificadores que comparto. Cada uno se centra en un aspecto diferente de la calidad del código.
 
 | Verificador | Qué comprueba |
 |---|---|
@@ -66,11 +66,12 @@ Estos son los primeros cuatro verificadores que comparto. Cada uno se centra en 
 | [**verify-trampas.mts**](verificadores/verify-trampas.mts) | Vigila que nadie engañe a los demás verificadores: comprobaciones apagadas con `@ts-ignore` o `eslint-disable`, tipos forzados, la consola disfrazada, avisos que no avisan, código que nadie revisa y ajustes que esconden errores. |
 | [**verify-runtime-safety.ts**](verificadores/verify-runtime-safety.ts) | Revisa operaciones que pueden provocar fallos durante la ejecución: JSON sin proteger, variables de entorno que se dan por hechas, respuestas HTTP sin comprobar y listas que pueden venir vacías. |
 | [**find-hardcoded-colors.ts**](verificadores/find-hardcoded-colors.ts) | Localiza colores escritos directamente en el código fuera de los archivos del tema, para mantener la coherencia del sistema de estilos. |
+| [**verify-falsificaciones.mts**](verificadores/verify-falsificaciones.mts) | Lee el proyecto entero con el comprobador de tipos y caza lo que se da por bueno sin comprobarlo: comprobaciones de tipo hechas a mano, notas que citan líneas que no existen, valores vacíos por defecto, listas recortadas sin avisar, código que nadie usa, fallos de `Promise.allSettled` que nadie mira y código comentado. |
 
 Cada archivo contiene sus propias comprobaciones. Puedes consultar el código para conocer las reglas que aplica y su funcionamiento.
 
 > [!NOTE]
-> **Antes de pitar el inicio:** `verify-error-handling` y `verify-trampas` se lanzan con Node 22.18 o superior y usan el paquete `typescript` del proyecto; `verify-trampas` tiene que jugar dentro de un repositorio git. `verify-runtime-safety` y `find-hardcoded-colors` se lanzan con `ts-node`. Todos desde la raíz del proyecto:
+> **Antes de pitar el inicio:** `verify-error-handling`, `verify-trampas` y `verify-falsificaciones` se lanzan con Node 22.18 o superior y usan el paquete `typescript` del proyecto; `verify-trampas` y `verify-falsificaciones` tienen que jugar dentro de un repositorio git. `verify-runtime-safety` y `find-hardcoded-colors` se lanzan con `ts-node`. Todos desde la raíz del proyecto:
 
 ```bash
 node verificadores/verify-error-handling.mts

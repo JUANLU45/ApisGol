@@ -2,9 +2,9 @@
  * verify-trampas.mts - Que nadie, tampoco una IA, pueda hacer trampa con los errores.
  *
  * QUE COMPRUEBA
- *   Los otros verificadores miran si un error se calla. Este mira que nadie los engañe:
- *   ni apagando comprobaciones, ni disfrazando la consola, ni dejando codigo donde no
- *   miran. El proyecto es lo que git tiene por proyecto: lo guardado y lo nuevo que no
+ *   Los otros verificadores miran si un error se calla. Este mira que nadie les haga
+ *   trampa: ni apagando comprobaciones, ni disfrazando la consola, ni dejando codigo donde
+ *   no miran. El proyecto es lo que git tiene por proyecto: lo guardado y lo nuevo que no
  *   esta ignorado (git ls-files). Busca:
  *     1. MARCA_PARA_CALLAR  - la frase "callado a proposito" en cualquier parte del
  *                             codigo: la frase con la que se excusaria un silencio para
@@ -15,21 +15,29 @@
  *                             ignore, c8 ignore. Solo en comentarios: un patron o un
  *                             texto que los nombra no apaga nada.
  *     3. TIPO_FORZADO       - "as unknown as" o "as any as": obliga al comprobador de
- *                             tipos a tragarse un tipo, igual que un any.
+ *                             tipos a tragarse un tipo, igual que un any. Tambien escrito
+ *                             con la forma antigua de los angulos (<T><unknown>x), o
+ *                             mezclando las dos. Un solo "as T" no salta aqui: sin los
+ *                             tipos no se sabe si estrecha o ensancha; lo juzga ESLint con
+ *                             no-unsafe-type-assertion.
  *     4. CONSOLA_DISFRAZADA - la consola con otro nombre (const escribir = console.error,
  *                             const { warn } = console, console['error']): asi una
  *                             llamada a la consola deja de parecerlo.
  *     5. AVISO_FALSO        - una funcion con nombre que recibe algo y solo lo escribe en
  *                             la consola o no hace nada; o un estado de aviso (setError...)
- *                             cuyo valor nunca se lee. Pasarles el error engaña a
+ *                             cuyo valor nunca se lee. Pasarles el error engana a
  *                             verify-error-handling, que lo da por avisado.
  *     6. ARCHIVO_SIN_LEER   - codigo dentro de src/ que los verificadores se saltan
  *                             (scripts/, __tests__/, __mocks__/, node_modules/, .next/,
- *                             dist/, coverage/, .test., .spec.) o que git ignora.
+ *                             dist/, coverage/, .test., .spec.), que escrito en .mjs, .cjs,
+ *                             .mts o .cts no leen (los de errores solo leen .ts, .tsx, .js
+ *                             y .jsx) o que git ignora.
  *     7. AJUSTE_QUE_ESCONDE - un next.config que ignora errores al construir; un
- *                             tsconfig sin strict, con una comprobacion apagada o con
- *                             otras carpetas dentro o fuera de las aprobadas; o un
- *                             comando de package.json cambiado.
+ *                             tsconfig sin strict, con una comprobacion apagada, con su
+ *                             forma de cargar los archivos cambiada (las opciones fijas de
+ *                             TSCONFIGS, como module o moduleResolution) o con otras
+ *                             carpetas dentro o fuera de las aprobadas; o un comando de
+ *                             package.json cambiado.
  *   La carpeta de los verificadores no se mira con las reglas 1 a 5: sus reglas llevan
  *   escrito lo que buscan. La documentacion no se mira: no se compila ni se ejecuta.
  *   Las librerias de terceros (node_modules, en cualquier sitio) no se miran; si una
@@ -50,8 +58,10 @@
  *   - DOCUMENTACION: su carpeta de documentacion, si la tiene.
  *   - DENTRO_DE_LA_APP y la lista que se pide a git en la regla 6: las carpetas con el
  *     codigo de su aplicacion (aqui, src/).
- *   - TSCONFIGS: lo que tiene hoy cada tsconfig de su proyecto (include, exclude y las
- *     comprobaciones encendidas). Vienen los valores con los que Next crea un proyecto.
+ *   - EXTENSION_QUE_NO_LEEN: las extensiones que sus verificadores no leen.
+ *   - TSCONFIGS: lo que tiene hoy cada tsconfig de su proyecto (include, exclude, las
+ *     comprobaciones encendidas y, si alguna opcion no puede cambiar nunca, sus "fijas"
+ *     con el valor en minusculas). Vienen los valores con los que Next crea un proyecto.
  *   - COMANDOS: los comandos de su package.json que no deben cambiar.
  *   - MARCA, si sus verificadores aceptaran otra frase para excusar un silencio.
  *
@@ -211,10 +221,15 @@ function consolaDisfrazada(n: ts.Node): boolean {
   return !((ts.isVariableDeclaration(p) || ts.isParameter(p)) && p.name === n);
 }
 
+// Un tipo forzado: x as T o, en los .ts, la forma antigua con angulos <T>x. Las dos hacen lo mismo.
+function esForzado(n: ts.Node): n is ts.AsExpression | ts.TypeAssertion {
+  return ts.isAsExpression(n) || ts.isTypeAssertionExpression(n);
+}
+
 function tipoForzado(n: ts.Node): boolean {
-  if (!ts.isAsExpression(n)) return false;
+  if (!esForzado(n)) return false;
   const dentro = sinParentesis(n.expression);
-  return ts.isAsExpression(dentro)
+  return esForzado(dentro)
     && (dentro.type.kind === ts.SyntaxKind.UnknownKeyword || dentro.type.kind === ts.SyntaxKind.AnyKeyword);
 }
 
@@ -256,11 +271,15 @@ const DENTRO_DE_LA_APP = /^src\//;
 // Lo que los demas verificadores no leen por su nombre o su carpeta.
 const QUE_SE_SALTAN = /(^|\/)(scripts|__tests__|__mocks__|node_modules|\.next|dist|coverage)\/|\.(test|spec)\./;
 const LIBRERIAS = /(^|\/)node_modules\//;
+// verify-error-handling y verify-runtime-safety solo leen .ts, .tsx, .js y .jsx.
+const EXTENSION_QUE_NO_LEEN = /\.(mjs|cjs|mts|cts)$/;
 
 function revisarArchivosSinLeer(codigo: string[]): void {
   for (const rel of codigo) {
     if (DENTRO_DE_LA_APP.test(rel) && QUE_SE_SALTAN.test(rel)) {
       apuntar(rel, 1, 'ARCHIVO_SIN_LEER', 'los verificadores se saltan este archivo por su nombre o su carpeta');
+    } else if (DENTRO_DE_LA_APP.test(rel) && EXTENSION_QUE_NO_LEEN.test(rel)) {
+      apuntar(rel, 1, 'ARCHIVO_SIN_LEER', 'los verificadores de errores no leen un archivo con esta extension: solo .ts, .tsx, .js y .jsx');
     }
   }
   const ignorados = git(['ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--', 'src']);
@@ -282,10 +301,13 @@ interface TsconfigAprobado {
   exclude: string[];
   /** Comprobaciones que hoy estan encendidas y no se pueden apagar. */
   encendidas: string[];
+  /** Opciones que deciden como se carga cada archivo al comprobarlo: no pueden cambiar. */
+  fijas?: Readonly<Record<string, string>>;
 }
 
 // Lo que tiene hoy cada tsconfig del proyecto (aqui, el que crea Next). Cambiarlo es
-// cambiar este archivo. Si hay mas de uno, una entrada por cada uno.
+// cambiar este archivo. Si hay mas de uno, una entrada por cada uno. Si una opcion no puede
+// cambiar nunca (module, moduleResolution), va en fijas con su valor en minusculas.
 const TSCONFIGS: ReadonlyArray<TsconfigAprobado> = [
   {
     ruta: 'tsconfig.json',
@@ -333,6 +355,13 @@ function revisarTsconfig(t: TsconfigAprobado): void {
   }
   for (const clave of COMPROBACIONES_ESTRICTAS) {
     if (opciones[clave] === false) apuntar(t.ruta, lineaDe(leido.texto, clave), 'AJUSTE_QUE_ESCONDE', `"${clave}" apagada`);
+  }
+  // TypeScript lee estos valores sin mirar mayusculas: NodeNext y nodenext son lo mismo.
+  for (const [clave, valor] of Object.entries(t.fijas ?? {})) {
+    const puesto = opciones[clave];
+    if (typeof puesto !== 'string' || puesto.toLowerCase() !== valor) {
+      apuntar(t.ruta, lineaDe(leido.texto, clave), 'AJUSTE_QUE_ESCONDE', `"${clave}" tiene que ser "${valor}": decide como se carga cada archivo al comprobarlo`);
+    }
   }
   if (!mismaLista(leido.datos.include, t.include)) {
     apuntar(t.ruta, lineaDe(leido.texto, 'include'), 'AJUSTE_QUE_ESCONDE', `"include" cambiado: tiene que ser ${JSON.stringify(t.include)}`);
