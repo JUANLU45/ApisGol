@@ -81,4 +81,11 @@ node verificadores/verify-error-handling.mts
 npx ts-node verificadores/verify-runtime-safety.ts
 ```
 
+#### Prueba ejecutada
+
+<p align="center">
+  <img src="capturas/prueba-verify-trampas-parte-1.png" alt="Prueba ejecutada de verify-trampas, parte 1" width="49%">
+  <img src="capturas/prueba-verify-trampas-parte-2.png" alt="Prueba ejecutada de verify-trampas, parte 2" width="49%">
+</p>
+
 **EMPIEZA EL JUEGO.**
